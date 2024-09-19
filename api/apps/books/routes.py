@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from apps.books.dtos import CreateBookDto
+
 router = APIRouter(
     prefix="/books",
 )
@@ -13,3 +15,8 @@ async def get_book(book_id: int):
         "description": "Short description",
         "author": "Petar Cevriz",
     }
+
+
+@router.post("/")
+async def create_book(book: CreateBookDto):
+    return book
