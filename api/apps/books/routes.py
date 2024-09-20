@@ -7,6 +7,24 @@ router = APIRouter(
 )
 
 
+@router.get("/")
+async def get_books():
+    return [
+        {
+            "id": 1,
+            "title": "Hello World!",
+            "description": "Short description",
+            "author": "Petar Cevriz",
+        },
+        {
+            "id": 2,
+            "title": "Hello World!",
+            "description": "Short description",
+            "author": "Petar Cevriz",
+        },
+    ]
+
+
 @router.get("/{book_id}")
 async def get_book(book_id: int):
     return {
