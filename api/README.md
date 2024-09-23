@@ -18,6 +18,16 @@ This project is built using [FastAPI](https://fastapi.tiangolo.com/). It uses Py
    pip install -r requirements.txt
    ```
 
+## Step 2: Set Up Environment Variables
+
+1. Create .env file
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Fill out environment variables
+
 ## Step 3: Set Up VSCode for Development (Optional)
 
 If you're using VSCode, follow these steps for a better development experience:
