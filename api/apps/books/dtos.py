@@ -1,6 +1,20 @@
 from pydantic import BaseModel
 
 
+class GetBookDto(BaseModel):
+    id: int
+    title: str
+    description: str
+    author: str
+
+
+class ListBookDto(BaseModel):
+    id: int
+    title: str
+    description: str
+    author: str
+
+
 class CreateBookDto(BaseModel):
     title: str
     description: str | None = None
