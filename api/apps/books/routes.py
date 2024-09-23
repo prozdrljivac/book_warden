@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from apps.books.dtos import CreateBookDto, UpdateBookDto
+from apps.books.dtos import CreateBookDto, GetBookDto, ListBookDto, UpdateBookDto
 
 router = APIRouter(
     prefix="/books",
@@ -10,29 +10,29 @@ router = APIRouter(
 @router.get("/")
 async def get_books():
     return [
-        {
-            "id": 1,
-            "title": "Hello World!",
-            "description": "Short description",
-            "author": "Petar Cevriz",
-        },
-        {
-            "id": 2,
-            "title": "Hello World!",
-            "description": "Short description",
-            "author": "Petar Cevriz",
-        },
+        ListBookDto(
+            id=1,
+            title="Hello World!",
+            description="Short description",
+            author="Petar Cevriz",
+        ),
+        ListBookDto(
+            id=2,
+            title="Hello World!",
+            description="Short description",
+            author="Petar Cevriz",
+        ),
     ]
 
 
 @router.get("/{book_id}")
 async def get_book(book_id: int):
-    return {
-        "id": book_id,
-        "title": "Hello World!",
-        "description": "Short description",
-        "author": "Petar Cevriz",
-    }
+    return GetBookDto(
+        id=book_id,
+        title="Hello World!",
+        description="Short description",
+        author="Petar Cevriz",
+    )
 
 
 @router.post("/")
