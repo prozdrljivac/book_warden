@@ -11,19 +11,24 @@ router = APIRouter(
 
 @router.get("/")
 async def get_books():
+    db_connection = sqlite3.connect("db/dev.db")
+    db_cursor = db_connection.cursor()
+    result = db_cursor.execute(
+        """
+        SELECT id, title, description, author FROM books;
+        """
+    )
+    books = result.fetchall()
+    db_cursor.close()
+    db_connection.close()
     return [
         ListBookDto(
-            id=1,
-            title="Hello World!",
-            description="Short description",
-            author="Petar Cevriz",
-        ),
-        ListBookDto(
-            id=2,
-            title="Hello World!",
-            description="Short description",
-            author="Petar Cevriz",
-        ),
+            id=book[0],
+            title=book[1],
+            description=book[2],
+            author=book[3],
+        )
+        for book in books
     ]
 
 
