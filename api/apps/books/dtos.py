@@ -1,23 +1,31 @@
 from pydantic import BaseModel
 
 
-class GetBookDto(BaseModel):
+# Rename these into Request and Response
+class GetBookResponseDto(BaseModel):
     id: int
     title: str
     description: str
     author: str
 
 
-class ListBookDto(BaseModel):
+class ListBookResponseDto(BaseModel):
     id: int
     title: str
     description: str
     author: str
 
 
-class CreateBookDto(BaseModel):
+class CreateBookRequestDto(BaseModel):
     title: str
     description: str | None = None
+    author: str
+
+
+class CreateBookResponseDto(BaseModel):
+    id: int
+    title: str
+    description: str
     author: str
 
 
