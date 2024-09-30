@@ -95,4 +95,11 @@ async def update_book(book_id: int, update_book_dto: UpdateBookDto):
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: int):
-    return book_id
+    with sqlite3.connect("db/dev.db") as db_connection:
+        db_cursor = db_connection.cursor()
+        db_cursor.execute(
+            """
+            DELETE FROM books WHERE id = ?
+            """,
+            (book_id,),
+        )
