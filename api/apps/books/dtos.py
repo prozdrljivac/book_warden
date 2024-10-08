@@ -29,7 +29,14 @@ class CreateBookResponseDto(BaseModel):
     author: str
 
 
-class UpdateBookDto(BaseModel):
+class UpdateBookRequestDto(BaseModel):
     title: str | None = None
     description: str | None = None
     author: str | None = None
+
+
+class UpdateBookResponseDto(BaseModel):
+    id: int
+    title: str
+    description: str
+    author: str
