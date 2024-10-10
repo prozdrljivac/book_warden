@@ -1,6 +1,6 @@
-import sqlite3
+from typing import List
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 
 from apps.books.dtos import (
     CreateBookRequestDto,
@@ -10,133 +10,57 @@ from apps.books.dtos import (
     UpdateBookRequestDto,
     UpdateBookResponseDto,
 )
+from apps.books.repositories import BookRepository
 
 router = APIRouter(
     prefix="/books",
 )
 
 
-@router.get("/")
-def get_books():
-    with sqlite3.connect("db/dev.db") as db_connection:
-        db_cursor = db_connection.cursor()
-        result = db_cursor.execute(
-            """
-            SELECT id, title, description, author FROM books;
-            """
-        )
-        books = result.fetchall()
-
-    return [
-        ListBookResponseDto(
-            id=book[0],
-            title=book[1],
-            description=book[2],
-            author=book[3],
-        )
-        for book in books
-    ]
+# TODO look into depends more
+def get_book_repository():
+    return BookRepository()
 
 
-@router.get("/{book_id}")
-def get_book(book_id: int):
-    with sqlite3.connect("db/dev.db") as db_connection:
-        db_cursor = db_connection.cursor()
-        result = db_cursor.execute(
-            "SELECT id, title, description, author FROM books WHERE id=?",
-            (book_id,),
-        )
-        book = result.fetchone()
-
-        if not book:
-            return Response(status_code=status.HTTP_404_NOT_FOUND)
-
-    return GetBookResponseDto(
-        id=book[0],
-        title=book[1],
-        description=book[2],
-        author=book[3],
-    )
+@router.get("/", response_model=List[ListBookResponseDto])
+def get_books(repository: BookRepository = Depends(get_book_repository)):
+    return repository.get_books()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-def create_book(create_book_request_dto: CreateBookRequestDto):
-    with sqlite3.connect("db/dev.db") as db_connection:
-        db_cursor = db_connection.cursor()
-        db_cursor.execute(
-            """
-            INSERT INTO books (title, description, author) VALUES (?, ?, ?)
-            """,
-            (
-                create_book_request_dto.title,
-                create_book_request_dto.description,
-                create_book_request_dto.author,
-            ),
-        )
-        book_id = db_cursor.lastrowid
-        db_cursor.execute(
-            "SELECT id, title, description, author FROM books WHERE id = ?",
-            (book_id,),
-        )
-        book = db_cursor.fetchone()
-        db_connection.commit()
-    return CreateBookResponseDto(
-        id=book[0],
-        title=book[1],
-        description=book[2],
-        author=book[3],
-    )
+@router.get("/{book_id}", response_model=GetBookResponseDto)
+def get_book(book_id: int, repository: BookRepository = Depends(get_book_repository)):
+    book = repository.get_book(book_id)
+    if not book:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    return book
 
 
-# TODO - check if user can send request without update_book_dto
-@router.patch("/{book_id}")
-def update_book(book_id: int, update_book_dto: UpdateBookRequestDto):
-    with sqlite3.connect("db/dev.db") as db_connection:
-        db_cursor = db_connection.cursor()
-        result = db_cursor.execute(
-            "SELECT id, title, description, author FROM books WHERE id=?",
-            (book_id,),
-        )
-        book = result.fetchone()
+@router.post(
+    "/",
+    response_model=CreateBookResponseDto,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_book(
+    create_book_request_dto: CreateBookRequestDto,
+    repository: BookRepository = Depends(get_book_repository),
+):
+    return repository.create_book(create_book_request_dto)
 
-        if not book:
-            return Response(status_code=status.HTTP_404_NOT_FOUND)
 
-        # This only makes sense if our values cannot be None in the DB
-        update_book_dct = update_book_dto.model_dump(exclude_none=True)
-        update_fields = [f"{k} = ?" for k in update_book_dct.keys()]
-        params = [v for v in update_book_dct.values()]
-
-        if update_fields:
-            query = f"UPDATE books SET {', '.join(update_fields)} WHERE id = ?"
-            # TODO need a better way to pull this id
-            params.append(book[0])
-
-            db_cursor.execute(query, tuple(params))
-            db_connection.commit()
-
-            updated_book = db_cursor.execute(
-                "SELECT id, title, description, author FROM books WHERE id=?",
-                (book_id,),
-            ).fetchone()
-
-            return UpdateBookResponseDto(
-                id=updated_book[0],
-                title=updated_book[1],
-                description=updated_book[2],
-                author=updated_book[3],
-            )
-    # TODO check if this is a correct response
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{book_id}", response_model=UpdateBookResponseDto)
+def update_book(
+    book_id: int,
+    update_book_dto: UpdateBookRequestDto,
+    repository: BookRepository = Depends(get_book_repository),
+):
+    updated_book = repository.update_book(book_id, update_book_dto)
+    if not updated_book:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    return updated_book
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_book(book_id: int):
-    with sqlite3.connect("db/dev.db") as db_connection:
-        db_cursor = db_connection.cursor()
-        db_cursor.execute(
-            """
-            DELETE FROM books WHERE id = ?
-            """,
-            (book_id,),
-        )
+def delete_book(
+    book_id: int, repository: BookRepository = Depends(get_book_repository)
+):
+    repository.delete_book(book_id)
