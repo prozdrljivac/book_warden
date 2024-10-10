@@ -88,7 +88,6 @@ def create_book(create_book_request_dto: CreateBookRequestDto):
     )
 
 
-# BUG - Updates fields to None even though fields were not provided in the request
 # TODO - check if user can send request without update_book_dto
 @router.patch("/{book_id}")
 def update_book(book_id: int, update_book_dto: UpdateBookRequestDto):
@@ -103,8 +102,9 @@ def update_book(book_id: int, update_book_dto: UpdateBookRequestDto):
         if not book:
             return Response(status_code=status.HTTP_404_NOT_FOUND)
 
-        update_book_dct = update_book_dto.model_dump()
-        update_fields = [f"{k} = ?" for k in update_book_dct.keys() if ]
+        # This only makes sense if our values cannot be None in the DB
+        update_book_dct = update_book_dto.model_dump(exclude_none=True)
+        update_fields = [f"{k} = ?" for k in update_book_dct.keys()]
         params = [v for v in update_book_dct.values()]
 
         if update_fields:
