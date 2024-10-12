@@ -1,33 +1,22 @@
 import sqlite3
 from typing import List, Optional
 
-from apps.books.dtos import (
-    CreateBookRequestDto,
-    CreateBookResponseDto,
-    GetBookResponseDto,
-    ListBookResponseDto,
-    UpdateBookRequestDto,
-    UpdateBookResponseDto,
-)
+from apps.books.models import BookModel
 
 
-# TODO
-# 1. Repository should not get request dto as input
-# 2. Repository should return a model type, not a response dto type
 class BookRepository:
     def __init__(self, db_path="db/dev.db"):
         self.db_path = db_path
 
-    def get_books(self) -> List[ListBookResponseDto]:
+    def get_books(self) -> List[BookModel]:
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
-            result = db_cursor.execute(
-                "SELECT id, title, description, author FROM books;"
-            )
+            query = "SELECT id, title, description, author FROM books;"
+            result = db_cursor.execute(query)
             books = result.fetchall()
 
         return [
-            ListBookResponseDto(
+            BookModel(
                 id=book[0],
                 title=book[1],
                 description=book[2],
@@ -36,18 +25,20 @@ class BookRepository:
             for book in books
         ]
 
-    def get_book(self, book_id: int) -> Optional[GetBookResponseDto]:
+    def get_book(
+        self,
+        *,
+        id: int,
+    ) -> Optional[BookModel]:
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
-            result = db_cursor.execute(
-                "SELECT id, title, description, author FROM books WHERE id=?",
-                (book_id,),
-            )
+            query = "SELECT id, title, description, author FROM books WHERE id=?"
+            result = db_cursor.execute(query, (id,))
             book = result.fetchone()
             if not book:
                 return None
 
-        return GetBookResponseDto(
+        return BookModel(
             id=book[0],
             title=book[1],
             description=book[2],
@@ -56,76 +47,105 @@ class BookRepository:
 
     def create_book(
         self,
-        create_book_request_dto: CreateBookRequestDto,
-    ) -> CreateBookResponseDto:
+        *,
+        title: str,
+        description: str,
+        author: str,
+    ) -> BookModel:
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
+            insert_query = (
+                "INSERT INTO books (title, description, author) VALUES (?, ?, ?)"
+            )
             db_cursor.execute(
-                """
-                INSERT INTO books (title, description, author) VALUES (?, ?, ?)
-                """,
+                insert_query,
                 (
-                    create_book_request_dto.title,
-                    create_book_request_dto.description,
-                    create_book_request_dto.author,
+                    title,
+                    description,
+                    author,
                 ),
             )
             book_id = db_cursor.lastrowid
+            get_book_by_id_query = (
+                "SELECT id, title, description, author FROM books WHERE id = ?"
+            )
             db_cursor.execute(
-                "SELECT id, title, description, author FROM books WHERE id = ?",
+                get_book_by_id_query,
                 (book_id,),
             )
             book = db_cursor.fetchone()
             db_connection.commit()
 
-        return CreateBookResponseDto(
+        return BookModel(
             id=book[0],
             title=book[1],
             description=book[2],
             author=book[3],
         )
 
+    # TODO update_book not working, FIX
     def update_book(
-        self, book_id: int, update_book_dto: UpdateBookRequestDto
-    ) -> Optional[UpdateBookResponseDto]:
+        self,
+        *,
+        id: int,
+        title: str | None,
+        description: str | None,
+        author: str | None,
+    ) -> Optional[BookModel]:
+        update_fields = {
+            title: title,
+            description: description,
+            author: author,
+        }
+
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
+            get_book_by_id_query = (
+                "SELECT id, title, description, author FROM books WHERE id=?"
+            )
+
             result = db_cursor.execute(
-                "SELECT id, title, description, author FROM books WHERE id=?",
-                (book_id,),
+                get_book_by_id_query,
+                (id,),
             )
             book = result.fetchone()
             if not book:
                 return None
 
-            update_book_dct = update_book_dto.model_dump(exclude_none=True)
-            update_fields = [f"{k} = ?" for k in update_book_dct.keys()]
-            params = [v for v in update_book_dct.values()]
+            field_names = [f"{k} = ?" for k in update_fields.keys()]
+            params = [v for v in update_fields.values()]
 
-            if update_fields:
-                query = f"UPDATE books SET {', '.join(update_fields)} WHERE id = ?"
+            if field_names:
+                update_book_by_id_query = (
+                    f"UPDATE books SET {', '.join(field_names)} WHERE id = ?"
+                )
                 params.append(book[0])
 
-                db_cursor.execute(query, tuple(params))
+                db_cursor.execute(update_book_by_id_query, tuple(params))
                 db_connection.commit()
 
                 updated_book = db_cursor.execute(
-                    "SELECT id, title, description, author FROM books WHERE id=?",
-                    (book_id,),
+                    get_book_by_id_query,
+                    (id,),
                 ).fetchone()
 
-                return UpdateBookResponseDto(
+                return BookModel(
                     id=updated_book[0],
                     title=updated_book[1],
                     description=updated_book[2],
                     author=updated_book[3],
                 )
 
-    def delete_book(self, book_id: int):
+    def delete_book(
+        self,
+        *,
+        book_id: int,
+    ) -> None:
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
+            delete_book_by_id_query = ("DELETE FROM books WHERE id = ?",)
             db_cursor.execute(
-                "DELETE FROM books WHERE id = ?",
+                delete_book_by_id_query,
                 (book_id,),
             )
             db_connection.commit()
