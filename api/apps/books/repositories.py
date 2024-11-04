@@ -49,9 +49,10 @@ class BookRepository:
         self,
         *,
         title: str,
-        description: str,
+        description: Optional[str],
         author: str,
     ) -> BookModel:
+        description = description or ""
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
             insert_query = (
@@ -83,20 +84,22 @@ class BookRepository:
             author=book[3],
         )
 
-    # TODO update_book not working, FIX
     def update_book(
         self,
         *,
         id: int,
-        title: str | None,
-        description: str | None,
-        author: str | None,
+        title: Optional[str],
+        description: Optional[str],
+        author: Optional[str],
     ) -> Optional[BookModel]:
-        update_fields = {
-            title: title,
-            description: description,
-            author: author,
-        }
+        update_fields = {}
+
+        if title:
+            update_fields["title"] = title
+        if description:
+            update_fields["description"] = description
+        if author:
+            update_fields["author"] = author
 
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
@@ -115,37 +118,39 @@ class BookRepository:
             field_names = [f"{k} = ?" for k in update_fields.keys()]
             params = [v for v in update_fields.values()]
 
-            if field_names:
-                update_book_by_id_query = (
-                    f"UPDATE books SET {', '.join(field_names)} WHERE id = ?"
-                )
-                params.append(book[0])
+            if not field_names:
+                return None
 
-                db_cursor.execute(update_book_by_id_query, tuple(params))
-                db_connection.commit()
+            update_book_by_id_query = (
+                f"UPDATE books SET {', '.join(field_names)} WHERE id = ?"
+            )
+            params.append(book[0])
 
-                updated_book = db_cursor.execute(
-                    get_book_by_id_query,
-                    (id,),
-                ).fetchone()
+            db_cursor.execute(update_book_by_id_query, tuple(params))
+            db_connection.commit()
 
-                return BookModel(
-                    id=updated_book[0],
-                    title=updated_book[1],
-                    description=updated_book[2],
-                    author=updated_book[3],
-                )
+            updated_book = db_cursor.execute(
+                get_book_by_id_query,
+                (id,),
+            ).fetchone()
+
+            return BookModel(
+                id=updated_book[0],
+                title=updated_book[1],
+                description=updated_book[2],
+                author=updated_book[3],
+            )
 
     def delete_book(
         self,
         *,
-        book_id: int,
+        id: int,
     ) -> None:
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
-            delete_book_by_id_query = ("DELETE FROM books WHERE id = ?",)
+            delete_book_by_id_query = "DELETE FROM books WHERE id = ?"
             db_cursor.execute(
                 delete_book_by_id_query,
-                (book_id,),
+                (id,),
             )
             db_connection.commit()

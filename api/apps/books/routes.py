@@ -17,7 +17,6 @@ router = APIRouter(
 )
 
 
-# TODO look into depends more
 def get_book_repository():
     return BookRepository()
 
@@ -75,4 +74,8 @@ def update_book(
 def delete_book(
     book_id: int, repository: BookRepository = Depends(get_book_repository)
 ):
-    repository.delete_book(book_id)
+    book = repository.get_book(id=book_id)
+    if not book:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+
+    repository.delete_book(id=book.id)
