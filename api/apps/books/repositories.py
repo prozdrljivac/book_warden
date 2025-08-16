@@ -1,14 +1,41 @@
 import sqlite3
+
+from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from apps.books.models import BookModel
 
+class BookRepository(ABC):
+    @abstractmethod
+    def all_books(self) -> List[BookModel]:
+        raise NotImplementedError
 
-class BookRepository:
+    @abstractmethod
+    def book(self, id: int) -> Optional[BookModel]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def create_book(self, title: str, description: Optional[str], author: str) -> BookModel:
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_book(
+            self,
+            id: int,
+            title: Optional[str],
+            description: Optional[str],
+            author: Optional[str]) -> BookModel:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_book(self, id: int) -> None:
+        raise NotImplementedError
+
+class SQLiteBookRepository(BookRepository):
     def __init__(self, db_path="db/dev.db"):
         self.db_path = db_path
 
-    def get_books(self) -> List[BookModel]:
+    def all_books(self) -> List[BookModel]:
         with sqlite3.connect(self.db_path) as db_connection:
             db_cursor = db_connection.cursor()
             query = "SELECT id, title, description, author FROM books;"
@@ -25,9 +52,8 @@ class BookRepository:
             for book in books
         ]
 
-    def get_book(
+    def book(
         self,
-        *,
         id: int,
     ) -> Optional[BookModel]:
         with sqlite3.connect(self.db_path) as db_connection:
@@ -47,7 +73,6 @@ class BookRepository:
 
     def create_book(
         self,
-        *,
         title: str,
         description: Optional[str],
         author: str,
@@ -86,7 +111,6 @@ class BookRepository:
 
     def update_book(
         self,
-        *,
         id: int,
         title: Optional[str],
         description: Optional[str],
@@ -141,9 +165,9 @@ class BookRepository:
                 author=updated_book[3],
             )
 
+
     def delete_book(
         self,
-        *,
         id: int,
     ) -> None:
         with sqlite3.connect(self.db_path) as db_connection:

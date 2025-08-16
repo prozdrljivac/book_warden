@@ -10,26 +10,27 @@ from apps.books.dtos import (
     UpdateBookRequestDto,
     UpdateBookResponseDto,
 )
-from apps.books.repositories import BookRepository
+from apps.books.repositories import SQLiteBookRepository
+from apps.books.services import BookService
 
 router = APIRouter(
     prefix="/books",
 )
 
 
-def get_book_repository():
-    return BookRepository()
+def new_book_service():
+    return BookService(book_repository=SQLiteBookRepository())
 
 
 @router.get("/", response_model=List[ListBookResponseDto])
-def get_books(repository: BookRepository = Depends(get_book_repository)):
-    books = repository.get_books()
+def get_books(service: BookService = Depends(new_book_service)):
+    books = service.all_books()
     return [ListBookResponseDto(**book.model_dump()) for book in books]
 
 
 @router.get("/{book_id}", response_model=GetBookResponseDto)
-def get_book(book_id: int, repository: BookRepository = Depends(get_book_repository)):
-    book = repository.get_book(id=book_id)
+def get_book(book_id: int, service: BookService = Depends(new_book_service)):
+    book = service.book(id=book_id)
     if not book:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
     return GetBookResponseDto(**book.model_dump())
@@ -42,23 +43,23 @@ def get_book(book_id: int, repository: BookRepository = Depends(get_book_reposit
 )
 def create_book(
     create_book_request_dto: CreateBookRequestDto,
-    repository: BookRepository = Depends(get_book_repository),
+    service: BookService = Depends(new_book_service),
 ):
-    created_book = repository.create_book(
+    book = service.new_book(
         title=create_book_request_dto.title,
         description=create_book_request_dto.description,
         author=create_book_request_dto.author,
     )
-    return CreateBookResponseDto(**created_book.model_dump())
+    return CreateBookResponseDto(**book.model_dump())
 
 
 @router.patch("/{book_id}", response_model=UpdateBookResponseDto)
 def update_book(
     book_id: int,
     update_book_dto: UpdateBookRequestDto,
-    repository: BookRepository = Depends(get_book_repository),
+    service: BookService = Depends(new_book_service),
 ):
-    updated_book = repository.update_book(
+    updated_book = service.update_book(
         id=book_id,
         title=update_book_dto.title,
         description=update_book_dto.description,
@@ -69,13 +70,8 @@ def update_book(
 
     return UpdateBookResponseDto(**updated_book.model_dump())
 
-
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_book(
-    book_id: int, repository: BookRepository = Depends(get_book_repository)
+    book_id: int, service: BookService = Depends(new_book_service)
 ):
-    book = repository.get_book(id=book_id)
-    if not book:
-        return Response(status_code=status.HTTP_404_NOT_FOUND)
-
-    repository.delete_book(id=book.id)
+    book = service.remove_book(id=book_id)
