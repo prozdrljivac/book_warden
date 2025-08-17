@@ -2,3 +2,6 @@ __pycache__
 .env
 
 dev.db
+
+/*.md
+!/README.md

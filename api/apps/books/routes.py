@@ -74,4 +74,4 @@ def update_book(
 def delete_book(
     book_id: int, service: BookService = Depends(new_book_service)
 ):
-    book = service.remove_book(id=book_id)
+    service.remove_book(id=book_id)
