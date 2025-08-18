@@ -4,6 +4,9 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from apps.books.models import BookModel
+from config.settings import get_settings
+
+app_settings = get_settings()
 
 class BookRepository(ABC):
     @abstractmethod
@@ -32,8 +35,8 @@ class BookRepository(ABC):
         raise NotImplementedError
 
 class SQLiteBookRepository(BookRepository):
-    def __init__(self, db_path="db/dev.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: Optional[str] = None):
+        self.db_path = db_path or app_settings.db_url
 
     def all_books(self) -> List[BookModel]:
         with sqlite3.connect(self.db_path) as db_connection:

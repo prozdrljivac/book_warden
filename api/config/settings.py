@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_secret_key: str
+    db_url: str = "db/dev.db"
+    server_port: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
