@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 
 from apps.books.dtos import (
     CreateBookRequestDto,
@@ -12,6 +12,7 @@ from apps.books.dtos import (
 )
 from apps.books.repositories import SQLiteBookRepository
 from apps.books.services import BookService
+from apps.exceptions import HTTP404Exception
 
 router = APIRouter(
     prefix="/books",
@@ -32,7 +33,7 @@ def get_books(service: BookService = Depends(new_book_service)):
 def get_book(book_id: int, service: BookService = Depends(new_book_service)):
     book = service.book(id=book_id)
     if not book:
-        return Response(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTP404Exception(detail=f"Book with id: {book_id} not found")
     return GetBookResponseDto(**book.model_dump())
 
 
@@ -66,7 +67,7 @@ def update_book(
         author=update_book_dto.author,
     )
     if not updated_book:
-        return Response(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTP404Exception(detail=f"Book with id: {book_id} not found")
 
     return UpdateBookResponseDto(**updated_book.model_dump())
 
