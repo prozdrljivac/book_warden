@@ -2,22 +2,23 @@ from typing import List, Optional
 
 from apps.books.models import BookModel
 from apps.books.repositories import BookRepository
+from apps.exceptions import BusinessRuleException
 from apps.validators import is_non_negative_strict_integer
 
 
-class InvalidBookIdValueError(ValueError):
+class InvalidBookIdValueError(BusinessRuleException):
     """Raised when book ID is invalid"""
     pass
 
-class InvalidBookTitleValueError(ValueError):
+class InvalidBookTitleValueError(BusinessRuleException):
     """Raised when book title is not a string"""
     pass
 
-class InvalidBookDescriptionValueError(ValueError):
+class InvalidBookDescriptionValueError(BusinessRuleException):
     """Raised when book description is not a string"""
     pass
 
-class InvalidBookAuthorValueError(ValueError):
+class InvalidBookAuthorValueError(BusinessRuleException):
     """Raised when book author is not a string"""
     pass
 
