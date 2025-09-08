@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     server_port: str
     environment: DEVELOPMENT_ENVIRONMENT = "DEV"
     log_level: LOG_LEVEL = "INFO"
-    log_path: Optional[str]
+    log_path: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env")
 

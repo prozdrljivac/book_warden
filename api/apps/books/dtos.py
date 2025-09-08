@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 
-# Rename these into Request and Response
 class GetBookResponseDto(BaseModel):
     id: int
     title: str

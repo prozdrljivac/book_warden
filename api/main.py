@@ -14,7 +14,12 @@ async def lifespan(app: FastAPI):
     init_db()
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Book Warden API",
+    description="A FastAPI-based book management system demonstrating clean architecture patterns",
+    version="1.0.0",
+    lifespan=lifespan
+)
 app.include_router(api_v1_router)
 
 @app.exception_handler(BusinessRuleException)

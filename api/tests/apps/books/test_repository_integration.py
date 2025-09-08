@@ -10,7 +10,6 @@ def temp_db():
     temp_dir = tempfile.mkdtemp()
     db_path = os.path.join(temp_dir, "test.db")
 
-    # Create the database schema
     with sqlite3.connect(db_path) as conn:
         conn.execute("""
             CREATE TABLE books(
@@ -24,7 +23,6 @@ def temp_db():
 
     yield db_path
 
-    # Cleanup
     if os.path.exists(db_path):
         os.remove(db_path)
     os.rmdir(temp_dir)
@@ -44,13 +42,13 @@ class TestSQLiteBookRepositoryIntegration:
             description="Test Description", 
             author="Test Author"
         )
-        
+
         # Assert
         assert book.id is not None
         assert book.title == "Test Title"
         assert book.description == "Test Description"
         assert book.author == "Test Author"
-        
+
         # Verify directly in database
         with sqlite3.connect(temp_db) as conn:
             cursor = conn.cursor()
@@ -68,14 +66,14 @@ class TestSQLiteBookRepositoryIntegration:
             description=None,
             author="Test Author"
         )
-        
+
         # Assert
         assert book.description == ""
 
     def test_all_books_returns_empty_list_when_no_books(self, repository):
         # Act
         books = repository.all_books()
-        
+
         # Assert
         assert books == []
 
@@ -83,10 +81,10 @@ class TestSQLiteBookRepositoryIntegration:
         # Arrange
         book1 = repository.create_book("Title 1", "Description 1", "Author 1")
         book2 = repository.create_book("Title 2", "Description 2", "Author 2")
-        
+
         # Act
         books = repository.all_books()
-        
+
         # Assert
         assert len(books) == 2
         book_ids = [book.id for book in books]
@@ -96,10 +94,10 @@ class TestSQLiteBookRepositoryIntegration:
     def test_book_returns_existing_book(self, repository):
         # Arrange
         created_book = repository.create_book("Test Title", "Test Description", "Test Author")
-        
+
         # Act
         retrieved_book = repository.book(created_book.id)
-        
+
         # Assert
         assert retrieved_book is not None
         assert retrieved_book.id == created_book.id
@@ -110,14 +108,14 @@ class TestSQLiteBookRepositoryIntegration:
     def test_book_returns_none_for_nonexistent_id(self, repository):
         # Act
         book = repository.book(999)
-        
+
         # Assert
         assert book is None
 
     def test_update_book_updates_all_fields(self, repository):
         # Arrange
         created_book = repository.create_book("Original Title", "Original Description", "Original Author")
-        
+
         # Act
         updated_book = repository.update_book(
             id=created_book.id,
@@ -125,7 +123,7 @@ class TestSQLiteBookRepositoryIntegration:
             description="Updated Description", 
             author="Updated Author"
         )
-        
+
         # Assert
         assert updated_book is not None
         assert updated_book.id == created_book.id
@@ -136,7 +134,7 @@ class TestSQLiteBookRepositoryIntegration:
     def test_update_book_updates_partial_fields(self, repository):
         # Arrange
         created_book = repository.create_book("Original Title", "Original Description", "Original Author")
-        
+
         # Act
         updated_book = repository.update_book(
             id=created_book.id,
@@ -144,7 +142,7 @@ class TestSQLiteBookRepositoryIntegration:
             description=None,
             author=None
         )
-        
+
         # Assert
         assert updated_book is not None
         assert updated_book.id == created_book.id
@@ -160,14 +158,14 @@ class TestSQLiteBookRepositoryIntegration:
             description="New Description",
             author="New Author"
         )
-        
+
         # Assert
         assert result is None
 
     def test_update_book_returns_none_when_no_fields_to_update(self, repository):
         # Arrange
         created_book = repository.create_book("Test Title", "Test Description", "Test Author")
-        
+
         # Act
         result = repository.update_book(
             id=created_book.id,
@@ -175,23 +173,23 @@ class TestSQLiteBookRepositoryIntegration:
             description=None,
             author=None
         )
-        
+
         # Assert
         assert result is None
 
     def test_delete_book_removes_from_database(self, repository, temp_db):
         # Arrange
         created_book = repository.create_book("Test Title", "Test Description", "Test Author")
-        
+
         # Verify book exists
         assert repository.book(created_book.id) is not None
-        
+
         # Act
         repository.delete_book(created_book.id)
-        
+
         # Assert
         assert repository.book(created_book.id) is None
-        
+
         # Verify directly in database
         with sqlite3.connect(temp_db) as conn:
             cursor = conn.cursor()

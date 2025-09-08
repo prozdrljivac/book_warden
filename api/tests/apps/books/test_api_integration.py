@@ -15,8 +15,7 @@ def temp_db():
     """Create a temporary SQLite database for testing"""
     temp_dir = tempfile.mkdtemp()
     db_path = os.path.join(temp_dir, "test.db")
-    
-    # Create the database schema
+
     with sqlite3.connect(db_path) as conn:
         conn.execute("""
             CREATE TABLE books(
@@ -27,10 +26,9 @@ def temp_db():
             )
         """)
         conn.commit()
-    
+
     yield db_path
-    
-    # Cleanup
+
     if os.path.exists(db_path):
         os.remove(db_path)
     os.rmdir(temp_dir)
